@@ -60,6 +60,7 @@ from pandas.io.json._normalize import convert_to_line_delimits
 from pandas.io.json._table_schema import (
     build_table_schema,
     parse_table_schema,
+    set_default_names,
 )
 from pandas.io.parsers.readers import validate_integer
 
@@ -352,7 +353,10 @@ class JSONTableWriter(FrameWriter):
             )
             raise ValueError(msg)
 
+        obj = obj.copy()
         self.schema = build_table_schema(obj, index=self.index)
+        if self.index:
+            obj = set_default_names(obj)
 
         # NotImplemented on a column MultiIndex
         if obj.ndim == 2 and isinstance(obj.columns, MultiIndex):
@@ -369,7 +373,6 @@ class JSONTableWriter(FrameWriter):
             msg = "Overlapping names between the index and columns"
             raise ValueError(msg)
 
-        obj = obj.copy()
         timedeltas = obj.select_dtypes(include=["timedelta"]).columns
         if len(timedeltas):
             obj[timedeltas] = obj[timedeltas].map(lambda x: x.isoformat())
